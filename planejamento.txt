@@ -1,0 +1,118 @@
+Planejamento
+
+Tabelas a serem criadas
+
+usuarios
+    id
+    nome
+    email
+    grupo
+    ativo
+
+grupo
+    id 
+    codigo
+    descricao
+
+projetos
+    id
+    nome
+    ativo
+
+usuarios-projetos
+    id
+    id_usuario
+    id_projeto
+
+tarefas
+    id
+    id_projeto
+    codigo
+    data_solicitacao
+    data_resolucao
+    relator
+    atribuido
+    gravidade
+    status
+    titulo
+    descricao
+
+tarefas-anotacoes
+    id
+    id_tarefa
+    anotacao
+    anexo
+
+historico
+    id
+    id_tabela
+    id_usuario
+    data 
+    acao 
+    
+_________________________________________
+
+Schema (English naming conventions — Laravel)
+
+groups
+    id
+    code
+    description
+    created_at
+    updated_at
+
+users                          # extend default Laravel users table
+    id
+    name
+    email
+    password
+    group_id                   # FK → groups.id
+    is_active
+    created_at
+    updated_at
+
+projects
+    id
+    name
+    is_active
+    created_at
+    updated_at
+
+project_user                   # pivot table (alphabetical order)
+    id
+    user_id                    # FK → users.id
+    project_id                 # FK → projects.id
+    created_at
+    updated_at
+
+tasks
+    id
+    project_id                 # FK → projects.id
+    code
+    requested_at
+    resolved_at                # nullable
+    reporter_id                # FK → users.id
+    assignee_id                # FK → users.id, nullable
+    severity                   # enum: low | medium | high | critical
+    status                     # enum: open | in_progress | resolved | closed
+    title
+    description
+    created_at
+    updated_at
+
+task_notes
+    id
+    task_id                    # FK → tasks.id
+    note
+    attachment                 # nullable, file path or storage key
+    created_at
+    updated_at
+
+histories                      # audit log
+    id
+    user_id                    # FK → users.id
+    auditable_type             # model class (e.g. App\Models\Task)
+    auditable_id               # record id in the target table
+    action                     # e.g. created | updated | deleted
+    created_at
+
