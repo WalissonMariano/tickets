@@ -1,5 +1,8 @@
 Planejamento
 
+- Deve possuir envio de email
+- Deve armazenar arquivos anexados
+
 Tabelas a serem criadas
 
 usuarios

@@ -1,66 +1,113 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Chamados.TI
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema de gerenciamento de chamados desenvolvido em Laravel. Permite controlar solicitações por projeto, atribuir tarefas a usuários, registrar anotações com anexos e manter histórico de alterações.
 
-## About Laravel
+## Funcionalidades
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Implementado
+- Tela de login com autenticação
+- Layout principal com menu lateral e conteúdo em iframe
+- Página Home com resumo e ações rápidas
+- Dashboard com métricas e indicadores
+- Models, migrations e relacionamentos do banco de dados
+- Estrutura de views para cadastros (grupos, usuários, projetos, tarefas, etc.)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Planejado
+- CRUD completo de cadastros e tarefas
+- Envio de e-mail
+- Armazenamento de arquivos anexados
+- Middleware de autenticação nas rotas protegidas
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Tecnologias
 
-## Learning Laravel
+- PHP 8.1+
+- Laravel 10
+- Laravel Sanctum
+- Vite
+- MySQL (ou banco configurado no `.env`)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Estrutura do banco
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+| Tabela | Descrição |
+|--------|-----------|
+| `groups` | Grupos de usuários |
+| `users` | Usuários do sistema |
+| `projects` | Projetos |
+| `project_user` | Vínculo usuário ↔ projeto |
+| `tasks` | Chamados/tarefas |
+| `task_notes` | Anotações e anexos das tarefas |
+| `histories` | Log de auditoria (ações nos registros) |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Estrutura de views
 
-## Laravel Sponsors
+```
+resources/views/
+├── auth/           # Login
+├── layouts/        # Menu principal
+├── home/           # Página inicial
+├── dashboard/      # Dashboard
+├── groups/         # Cadastro de grupos
+├── users/          # Cadastro de usuários
+├── projects/       # Cadastro de projetos
+├── project-user/   # Vínculo usuário-projeto
+├── tasks/          # Tarefas
+├── task-notes/     # Anotações
+└── histories/      # Histórico
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Instalação
 
-### Premium Partners
+```bash
+# Clonar o repositório e entrar na pasta
+cd tickets
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+# Instalar dependências
+composer install
+npm install
 
-## Contributing
+# Configurar ambiente
+cp .env.example .env
+php artisan key:generate
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# Configurar banco de dados no .env e rodar migrations
+php artisan migrate
 
-## Code of Conduct
+# Compilar assets
+npm run dev
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Rotas principais
 
-## Security Vulnerabilities
+| Rota | Descrição |
+|------|-----------|
+| `/` | Login |
+| `/menu` | Layout com menu e iframe |
+| `/home` | Home (conteúdo do iframe) |
+| `/dashboard` | Dashboard (conteúdo do iframe) |
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+> As rotas ainda não estão protegidas por middleware de autenticação durante o desenvolvimento inicial.
 
-## License
+## Desenvolvimento
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+# Servidor de desenvolvimento (Vite)
+npm run dev
+
+# Build para produção
+npm run build
+
+# Rodar testes
+php artisan test
+```
+
+Com [Laravel Herd](https://herd.laravel.com), o projeto pode ser acessado diretamente em `http://tickets.test`.
+
+## Paleta visual
+
+- Verde primário: `#16a34a`
+- Sidebar: `#2C2C2C`
+- Fundo da área de conteúdo: `#f1f5f9`
+
+## Licença
+
+Este projeto é open-source sob a licença [MIT](https://opensource.org/licenses/MIT).
