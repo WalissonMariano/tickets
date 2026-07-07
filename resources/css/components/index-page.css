@@ -145,6 +145,21 @@ body.index-page {
     overflow: hidden;
 }
 
+.index-page-alert {
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid;
+}
+
+.index-page-alert--success {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #15803d;
+}
+
 .index-page-table-wrap {
     overflow-x: auto;
 }
@@ -205,6 +220,37 @@ body.index-page {
     color: #94a3b8;
 }
 
+.index-page-actions {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.index-page-action-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #64748b;
+    text-decoration: none;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.index-page-action-link svg {
+    width: 14px;
+    height: 14px;
+}
+
+.index-page-action-link:hover {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #16a34a;
+}
+
 .index-page-badge {
     display: inline-block;
     font-size: 0.68rem;
@@ -252,6 +298,16 @@ body.index-page {
 .index-page-badge--critical {
     background: #fee2e2;
     color: #b91c1c;
+}
+
+.index-page-badge--active {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.index-page-badge--inactive {
+    background: #f1f5f9;
+    color: #64748b;
 }
 
 .index-page-empty {

@@ -73,4 +73,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(History::class);
     }
+
+    public function taskNotes(): HasMany
+    {
+        return $this->hasMany(TaskNote::class);
+    }
 }

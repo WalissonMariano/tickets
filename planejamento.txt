@@ -121,10 +121,10 @@ histories                      # audit log
 
 _________________________________________
 
-Criar view para listar grupos
-Criar view para listar usuarios
-Criar view para listar projetos
-Criar crud usuarios
+Criar view para listar grupos Ok
+Criar view para listar usuarios Ok
+Criar view para listar projetos Ok
+Criar crud usuarios 
 criar autenticaçao
 criar crud dos cadastros
 criar crud tarefas

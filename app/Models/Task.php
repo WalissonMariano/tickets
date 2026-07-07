@@ -23,6 +23,7 @@ class Task extends Model
         'status',
         'title',
         'description',
+        'attachment',
     ];
 
     protected $casts = [

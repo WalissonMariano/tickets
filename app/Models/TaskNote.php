@@ -12,6 +12,7 @@ class TaskNote extends Model
 
     protected $fillable = [
         'task_id',
+        'user_id',
         'note',
         'attachment',
     ];
@@ -19,5 +20,10 @@ class TaskNote extends Model
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }
