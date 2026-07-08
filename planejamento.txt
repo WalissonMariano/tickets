@@ -124,9 +124,15 @@ _________________________________________
 Criar view para listar grupos Ok
 Criar view para listar usuarios Ok
 Criar view para listar projetos Ok
-Criar crud usuarios 
-criar autenticaçao
-criar crud dos cadastros
-criar crud tarefas
+criar view fomulario usuarios Ok
+criar view fomulario usuarios/projetos Ok
+criar view fomulario grupos Ok
+criar view fomulario projetos Ok
+criar view fomulario tarefas Ok
+criar view fomulario tarefas anotacoes Ok
+Criar crud usuarios Ok
+criar autenticaçao Ok
+criar crud dos cadastros Ok
+criar crud tarefas 
 colocar dashboar para buscar do banco
 colocar home para funcionar

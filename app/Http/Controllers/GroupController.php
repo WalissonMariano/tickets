@@ -10,6 +10,7 @@ use Illuminate\View\View;
 
 class GroupController extends Controller
 {
+    //Busca todos os grupos
     public function index(Request $request): View
     {
         $query = Group::withCount('users')->orderBy('code');
@@ -27,41 +28,4 @@ class GroupController extends Controller
         return view('register.groups.index-groups', compact('groups'));
     }
 
-    public function create(): View
-    {
-        return view('register.groups.form-groups');
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:255', 'unique:groups,code'],
-            'description' => ['required', 'string', 'max:255'],
-        ]);
-
-        Group::create($validated);
-
-        return redirect()
-            ->route('register.groups.index')
-            ->with('success', 'Grupo cadastrado com sucesso.');
-    }
-
-    public function edit(Group $group): View
-    {
-        return view('register.groups.form-groups', compact('group'));
-    }
-
-    public function update(Request $request, Group $group): RedirectResponse
-    {
-        $validated = $request->validate([
-            'code' => ['required', 'string', 'max:255', Rule::unique('groups', 'code')->ignore($group->id)],
-            'description' => ['required', 'string', 'max:255'],
-        ]);
-
-        $group->update($validated);
-
-        return redirect()
-            ->route('register.groups.index')
-            ->with('success', 'Grupo atualizado com sucesso.');
-    }
 }

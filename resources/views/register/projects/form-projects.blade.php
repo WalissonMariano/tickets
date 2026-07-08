@@ -29,6 +29,7 @@
             @endif
 
             <form
+                id="project-form"
                 method="POST"
                 action="{{ $isEdit ? route('register.projects.update', $project) : route('register.projects.store') }}"
             >
@@ -66,14 +67,29 @@
                         </label>
                     </div>
                 </div>
+            </form>
 
-                <div class="form-page-actions">
+            <div class="form-page-actions">
+                @if ($isEdit)
+                    <form
+                        method="POST"
+                        action="{{ route('register.projects.destroy', $project) }}"
+                        class="form-page-delete-form"
+                        onsubmit="return confirm('Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.');"
+                    >
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="form-page-btn form-page-btn--danger">Excluir</button>
+                    </form>
+                @endif
+
+                <div class="form-page-actions-group">
                     <a href="{{ route('register.projects.index') }}" class="form-page-btn form-page-btn--secondary">Cancelar</a>
-                    <button type="submit" class="form-page-btn form-page-btn--primary">
+                    <button type="submit" form="project-form" class="form-page-btn form-page-btn--primary">
                         {{ $isEdit ? 'Salvar alterações' : 'Cadastrar projeto' }}
                     </button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </body>

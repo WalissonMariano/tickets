@@ -13,12 +13,6 @@
                 <h1>Grupos</h1>
                 <p>Listagem de grupos de usuários cadastrados no sistema.</p>
             </div>
-            <a href="{{ route('register.groups.create') }}" class="index-page-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                Novo grupo
-            </a>
         </header>
 
         @if (session('success'))
@@ -62,8 +56,6 @@
                                 <th>Código</th>
                                 <th>Descrição</th>
                                 <th>Usuários</th>
-                                <th>Cadastrado em</th>
-                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -76,15 +68,6 @@
                                         <span class="index-page-title">{{ $group->description }}</span>
                                     </td>
                                     <td>{{ $group->users_count }}</td>
-                                    <td>{{ $group->created_at?->format('d/m/Y') ?? '—' }}</td>
-                                    <td class="index-page-actions">
-                                        <a href="{{ route('register.groups.edit', $group) }}" class="index-page-action-link">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                                            </svg>
-                                            Editar
-                                        </a>
-                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

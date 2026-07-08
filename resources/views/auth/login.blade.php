@@ -25,8 +25,6 @@
                         alt="Chamados.TI"
                         class="login-form-logo"
                     >
-                    <!--<h2>Bem-vindo</h2>
-                    <p>Entre com suas credenciais para acessar o sistema</p>-->
                 </div>
 
                 @if (session('status'))

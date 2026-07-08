@@ -215,6 +215,17 @@ body.form-page {
     border-top: 1px solid #f1f5f9;
 }
 
+.form-page-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+}
+
+.form-page-delete-form {
+    margin: 0;
+}
+
 .form-page-btn {
     display: inline-flex;
     align-items: center;
@@ -252,6 +263,18 @@ body.form-page {
     background: #f0fdf4;
     border-color: #bbf7d0;
     color: #15803d;
+}
+
+.form-page-btn--danger {
+    background: #ffffff;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+
+.form-page-btn--danger:hover {
+    background: #fef2f2;
+    border-color: #f87171;
+    color: #b91c1c;
 }
 
 /* ── Repeater ── */

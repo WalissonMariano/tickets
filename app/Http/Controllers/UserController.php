@@ -12,6 +12,8 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
+
+    //busca todos os usuários
     public function index(Request $request): View
     {
         $query = User::with('group')->orderBy('name');
@@ -29,6 +31,15 @@ class UserController extends Controller
         return view('register.users.index-users', compact('users'));
     }
 
+    //Exibe os dados do usuário (conta do usuário logado ou por ID)
+    public function show(Request $request, ?User $user = null): View
+    {
+        $user = ($user ?? $request->user())->load(['group', 'projects']);
+
+        return view('account.index-account', compact('user'));
+    }
+
+    //exibe o formulário de criação de usuário
     public function create(): View
     {
         $groups = Group::orderBy('description')->get();
@@ -37,6 +48,7 @@ class UserController extends Controller
         return view('register.users.form-users', compact('groups', 'projects'));
     }
 
+    //cria um novo usuário
     public function store(Request $request): RedirectResponse
     {
         $this->normalizeProjectsInput($request);
@@ -54,7 +66,7 @@ class UserController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => $validated['password'],
+            'password' => bcrypt($validated['password']),
             'group_id' => $validated['group_id'],
             'is_active' => $request->boolean('is_active'),
         ]);
@@ -66,6 +78,7 @@ class UserController extends Controller
             ->with('success', 'Usuário cadastrado com sucesso.');
     }
 
+    //exibe o formulário de edição de usuário
     public function edit(User $user): View
     {
         $user->load('projects');
@@ -75,6 +88,7 @@ class UserController extends Controller
         return view('register.users.form-users', compact('user', 'groups', 'projects'));
     }
 
+    //atualiza um usuário existente
     public function update(Request $request, User $user): RedirectResponse
     {
         $this->normalizeProjectsInput($request);
@@ -108,6 +122,17 @@ class UserController extends Controller
             ->with('success', 'Usuário atualizado com sucesso.');
     }
 
+    //exclui um usuário existente
+    public function destroy(User $user): RedirectResponse
+    {
+        $user->delete();
+
+        return redirect()
+            ->route('register.users.index')
+            ->with('success', 'Usuário excluído com sucesso.');
+    }
+
+    //normaliza o input de projetos
     private function normalizeProjectsInput(Request $request): void
     {
         $request->merge([
