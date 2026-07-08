@@ -1,15 +1,4 @@
 @php
-    $taskNotes = old('notes');
-
-    if ($taskNotes === null && isset($task)) {
-        $taskNotes = $task->notes->map(fn ($note) => [
-            'id' => $note->id,
-            'user_id' => $note->user_id,
-            'note' => $note->note,
-            'attachment' => $note->attachment,
-        ])->toArray();
-    }
-
     $taskNotes = $taskNotes ?? [];
 @endphp
 
@@ -97,12 +86,27 @@
                     </div>
                 </div>
 
-                <button type="button" class="form-repeater-remove form-repeater-remove--note" title="Remover anotação" aria-label="Remover anotação">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                    </svg>
-                    Remover
-                </button>
+                @if (! empty($taskNote['id']) && isset($task))
+                    <button
+                        type="button"
+                        class="form-repeater-remove form-repeater-remove--note form-repeater-remove--persisted"
+                        data-destroy-url="{{ route('tasks.destroyNote', [$task, $taskNote['id']]) }}"
+                        title="Excluir anotação"
+                        aria-label="Excluir anotação"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                        Excluir
+                    </button>
+                @else
+                    <button type="button" class="form-repeater-remove form-repeater-remove--note" title="Remover anotação" aria-label="Remover anotação">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                        Remover
+                    </button>
+                @endif
             </div>
         @endforeach
     </div>
@@ -170,6 +174,40 @@
         list.addEventListener('click', (event) => {
             const removeButton = event.target.closest('.form-repeater-remove--note');
             if (!removeButton) {
+                return;
+            }
+
+            if (removeButton.classList.contains('form-repeater-remove--persisted')) {
+                if (!confirm('Tem certeza que deseja excluir esta anotação?')) {
+                    return;
+                }
+
+                const destroyUrl = removeButton.dataset.destroyUrl;
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+                if (!destroyUrl || !csrfToken) {
+                    return;
+                }
+
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = destroyUrl;
+
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+
+                const methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'DELETE';
+                form.appendChild(methodInput);
+
+                document.body.appendChild(form);
+                form.submit();
+
                 return;
             }
 

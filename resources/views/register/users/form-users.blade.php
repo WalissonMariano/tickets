@@ -29,6 +29,7 @@
             @endif
 
             <form
+                id="user-form"
                 method="POST"
                 action="{{ $isEdit ? route('register.users.update', $user) : route('register.users.store') }}"
             >
@@ -123,14 +124,29 @@
 
                     @include('register.project-user.form-repeater-project-user')
                 </div>
+            </form>
 
-                <div class="form-page-actions">
+            <div class="form-page-actions">
+                @if ($isEdit)
+                    <form
+                        method="POST"
+                        action="{{ route('register.users.destroy', $user) }}"
+                        class="form-page-delete-form"
+                        onsubmit="return confirm('Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.');"
+                    >
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="form-page-btn form-page-btn--danger">Excluir</button>
+                    </form>
+                @endif
+
+                <div class="form-page-actions-group">
                     <a href="{{ route('register.users.index') }}" class="form-page-btn form-page-btn--secondary">Cancelar</a>
-                    <button type="submit" class="form-page-btn form-page-btn--primary">
+                    <button type="submit" form="user-form" class="form-page-btn form-page-btn--primary">
                         {{ $isEdit ? 'Salvar alterações' : 'Cadastrar usuário' }}
                     </button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </body>

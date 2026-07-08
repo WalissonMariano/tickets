@@ -55,6 +55,12 @@ body.form-page {
     color: #b91c1c;
 }
 
+.form-page-alert--success {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+}
+
 .form-page-alert ul {
     margin: 0.35rem 0 0 1.1rem;
 }
@@ -114,6 +120,12 @@ body.form-page {
 .form-page-field textarea.is-invalid {
     border-color: #fca5a5;
     background: #fff5f5;
+}
+
+.form-page-input--readonly {
+    background: #f8fafc;
+    color: #64748b;
+    cursor: not-allowed;
 }
 
 .form-page-file {

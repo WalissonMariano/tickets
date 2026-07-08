@@ -14,12 +14,43 @@
         'high' => 'Alta',
         'critical' => 'Crítica',
     ];
+
+    $reporterName = $isEdit
+        ? ($task->reporter?->name ?? '—')
+        : auth()->user()->name;
+
+    $assigneeName = $isEdit
+        ? ($task->assignee?->name ?? 'Não atribuído')
+        : 'Não atribuído';
+
+    $requestedAtDisplay = $isEdit
+        ? ($task->requested_at?->format('d/m/Y H:i') ?? '—')
+        : now()->format('d/m/Y H:i');
+
+    $resolvedAtDisplay = ($isEdit && $task->resolved_at)
+        ? $task->resolved_at->format('d/m/Y H:i')
+        : '—';
+
+    $statusDisplay = $statusLabels[$isEdit ? $task->status : 'open'] ?? 'Aberta';
+
+    $showNotes = $isEdit && ($task->status ?? 'open') !== 'open';
+
+    $isAssignedToMe = $isEdit && (int) ($task->assignee_id ?? 0) === (int) auth()->id();
+
+    $showAssignToMe = $isEdit
+        ? ($task->status ?? 'open') === 'open' && ! $isAssignedToMe
+        : true;
+
+    $showResolve = $isEdit && ($task->status ?? '') === 'in_progress';
+
+    $showClose = $isEdit && ($task->status ?? '') === 'resolved';
 @endphp
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $isEdit ? 'Editar tarefa' : 'Nova tarefa' }} — Chamados</title>
     @vite(['resources/css/components/form-page.css'])
 </head>
@@ -31,6 +62,12 @@
         </header>
 
         <div class="form-page-card">
+            @if (session('success'))
+                <div class="form-page-alert form-page-alert--success">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             @if ($errors->any())
                 <div class="form-page-alert form-page-alert--error">
                     <strong>Verifique os campos abaixo:</strong>
@@ -43,6 +80,7 @@
             @endif
 
             <form
+                id="task-form"
                 method="POST"
                 action="{{ $isEdit ? route('tasks.update', $task) : route('tasks.store') }}"
                 enctype="multipart/form-data"
@@ -53,6 +91,20 @@
                 @endif
 
                 <div class="form-page-grid form-page-grid--cols-3">
+                    <div class="form-page-field">
+                        <label for="code">Código</label>
+                        <input
+                            type="text"
+                            id="code"
+                            value="{{ $isEdit ? $task->code : '—' }}"
+                            class="form-page-input--readonly"
+                            readonly
+                        >
+                        @unless ($isEdit)
+                            <span class="form-page-hint">Número sequencial gerado automaticamente ao salvar.</span>
+                        @endunless
+                    </div>
+
                     <div class="form-page-field">
                         <label for="project_id">Projeto</label>
                         <select
@@ -72,21 +124,6 @@
                             @endforeach
                         </select>
                         @error('project_id')
-                            <span class="form-page-error">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="form-page-field">
-                        <label for="code">Código</label>
-                        <input
-                            type="text"
-                            id="code"
-                            name="code"
-                            value="{{ old('code', $task->code ?? '') }}"
-                            class="@error('code') is-invalid @enderror"
-                            required
-                        >
-                        @error('code')
                             <span class="form-page-error">{{ $message }}</span>
                         @enderror
                     </div>
@@ -129,100 +166,58 @@
                     </div>
 
                     <div class="form-page-field">
-                        <label for="status">Status</label>
-                        <select
-                            id="status"
-                            name="status"
-                            class="@error('status') is-invalid @enderror"
-                            required
-                        >
-                            @foreach ($statusLabels as $value => $label)
-                                <option
-                                    value="{{ $value }}"
-                                    @selected(old('status', $task->status ?? 'open') === $value)
-                                >
-                                    {{ $label }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('status')
-                            <span class="form-page-error">{{ $message }}</span>
-                        @enderror
-                    </div>
-
-                    <div class="form-page-field">
                         <label for="reporter_id">Solicitante</label>
-                        <select
+                        <input
+                            type="text"
                             id="reporter_id"
-                            name="reporter_id"
-                            class="@error('reporter_id') is-invalid @enderror"
-                            required
+                            value="{{ $reporterName }}"
+                            class="form-page-input--readonly"
+                            readonly
                         >
-                            <option value="">Selecione o solicitante</option>
-                            @foreach ($users as $user)
-                                <option
-                                    value="{{ $user->id }}"
-                                    @selected(old('reporter_id', $task->reporter_id ?? '') == $user->id)
-                                >
-                                    {{ $user->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('reporter_id')
-                            <span class="form-page-error">{{ $message }}</span>
-                        @enderror
                     </div>
 
                     <div class="form-page-field">
                         <label for="assignee_id">Responsável</label>
-                        <select
+                        <input
+                            type="text"
                             id="assignee_id"
-                            name="assignee_id"
-                            class="@error('assignee_id') is-invalid @enderror"
+                            value="{{ $assigneeName }}"
+                            class="form-page-input--readonly"
+                            readonly
                         >
-                            <option value="">Não atribuído</option>
-                            @foreach ($users as $user)
-                                <option
-                                    value="{{ $user->id }}"
-                                    @selected(old('assignee_id', $task->assignee_id ?? '') == $user->id)
-                                >
-                                    {{ $user->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('assignee_id')
-                            <span class="form-page-error">{{ $message }}</span>
-                        @enderror
                     </div>
 
                     <div class="form-page-field">
                         <label for="requested_at">Data da solicitação</label>
                         <input
-                            type="datetime-local"
+                            type="text"
                             id="requested_at"
-                            name="requested_at"
-                            value="{{ old('requested_at', isset($task) ? $task->requested_at?->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i')) }}"
-                            class="@error('requested_at') is-invalid @enderror"
-                            required
+                            value="{{ $requestedAtDisplay }}"
+                            class="form-page-input--readonly"
+                            readonly
                         >
-                        @error('requested_at')
-                            <span class="form-page-error">{{ $message }}</span>
-                        @enderror
                     </div>
 
                     <div class="form-page-field">
                         <label for="resolved_at">Data da resolução</label>
                         <input
-                            type="datetime-local"
+                            type="text"
                             id="resolved_at"
-                            name="resolved_at"
-                            value="{{ old('resolved_at', isset($task) && $task->resolved_at ? $task->resolved_at->format('Y-m-d\TH:i') : '') }}"
-                            class="@error('resolved_at') is-invalid @enderror"
+                            value="{{ $resolvedAtDisplay }}"
+                            class="form-page-input--readonly"
+                            readonly
                         >
-                        <span class="form-page-hint">Opcional. Preencha quando a tarefa for resolvida.</span>
-                        @error('resolved_at')
-                            <span class="form-page-error">{{ $message }}</span>
-                        @enderror
+                    </div>
+
+                    <div class="form-page-field">
+                        <label for="status">Status</label>
+                        <input
+                            type="text"
+                            id="status"
+                            value="{{ $statusDisplay }}"
+                            class="form-page-input--readonly"
+                            readonly
+                        >
                     </div>
 
                     <div class="form-page-field form-page-field--full">
@@ -261,16 +256,70 @@
                         @enderror
                     </div>
 
-                    @include('task-notes.form-repeater-task-notes')
+                    @if ($showNotes)
+                        @include('task-notes.form-repeater-task-notes', [
+                            'users' => $users,
+                            'taskNotes' => $taskNotes ?? [],
+                            'task' => $task ?? null,
+                        ])
+                    @endif
                 </div>
+            </form>
 
-                <div class="form-page-actions">
+            <div class="form-page-actions">
+                @if ($isEdit)
+                    <form
+                        method="POST"
+                        action="{{ route('tasks.destroy', $task) }}"
+                        class="form-page-delete-form"
+                        onsubmit="return confirm('Tem certeza que deseja excluir esta tarefa? Esta ação não pode ser desfeita.');"
+                    >
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="form-page-btn form-page-btn--danger">Excluir</button>
+                    </form>
+                @endif
+
+                <div class="form-page-actions-group">
                     <a href="{{ route('tasks.index') }}" class="form-page-btn form-page-btn--secondary">Cancelar</a>
-                    <button type="submit" class="form-page-btn form-page-btn--primary">
+                    @if ($showAssignToMe)
+                        <button
+                            type="submit"
+                            form="task-form"
+                            name="assign_to_me"
+                            value="1"
+                            class="form-page-btn form-page-btn--secondary"
+                        >
+                            Atribuir a mim
+                        </button>
+                    @endif
+                    @if ($showResolve)
+                        <button
+                            type="submit"
+                            form="task-form"
+                            name="mark_resolved"
+                            value="1"
+                            class="form-page-btn form-page-btn--secondary"
+                        >
+                            Resolvido
+                        </button>
+                    @endif
+                    @if ($showClose)
+                        <button
+                            type="submit"
+                            form="task-form"
+                            name="mark_closed"
+                            value="1"
+                            class="form-page-btn form-page-btn--secondary"
+                        >
+                            Fechar tarefa
+                        </button>
+                    @endif
+                    <button type="submit" form="task-form" class="form-page-btn form-page-btn--primary">
                         {{ $isEdit ? 'Salvar alterações' : 'Cadastrar tarefa' }}
                     </button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </body>

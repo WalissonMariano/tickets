@@ -136,3 +136,12 @@ criar crud dos cadastros Ok
 criar crud tarefas 
 colocar dashboar para buscar do banco
 colocar home para funcionar
+
+_________________________________________
+
+Status da tarefa 
+
+Aberta
+Em andamento
+Resolvida
+Fechada
