@@ -217,6 +217,17 @@ body.form-page {
     color: #334155;
 }
 
+.form-page-card--section {
+    margin-top: 1.25rem;
+}
+
+.form-page-actions--section {
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #f1f5f9;
+}
+
 .form-page-actions {
     display: flex;
     align-items: center;

@@ -78,4 +78,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(TaskNote::class);
     }
+
+    public function isInGroup(string ...$codes): bool
+    {
+        return in_array($this->group?->code, $codes, true);
+    }
+
+    public function canAssignTasks(): bool
+    {
+        return $this->isInGroup('ADMIN', 'SUPORTE');
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->isInGroup('ADMIN');
+    }
+
+    public function canDeleteTask(Task $task): bool
+    {
+        return $task->status === 'open' || $this->isAdmin();
+    }
 }

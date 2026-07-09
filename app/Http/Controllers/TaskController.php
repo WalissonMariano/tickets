@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -49,18 +49,17 @@ class TaskController extends Controller
     //Mostra o formulário de criação de tarefa
     public function create(Request $request): View
     {
-        $projects = Project::orderBy('name')->get();
+        $projects = $this->projectsForUser($request);
         $users = User::orderBy('name')->get();
-        $taskNotes = $this->taskNoteController->prepareRepeaterNotes($request);
 
-        return view('tasks.form-tasks', compact('projects', 'users', 'taskNotes'));
+        return view('tasks.form-tasks', compact('projects', 'users'));
     }
 
     //Cria uma nova tarefa
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'project_id' => ['required', 'exists:projects,id'],
+            'project_id' => ['required', 'exists:projects,id', Rule::in($this->userProjectIds($request))],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'severity' => ['required', Rule::in(['low', 'medium', 'high', 'critical'])],
@@ -71,7 +70,7 @@ class TaskController extends Controller
             ? $this->storeTaskAttachment($request->file('attachment'))
             : null;
 
-        $assignToMe = $request->has('assign_to_me');
+        $assignToMe = $request->has('assign_to_me') && $request->user()->canAssignTasks();
 
         $task = Task::create([
             ...$validated,
@@ -94,8 +93,8 @@ class TaskController extends Controller
     //Mostra o formulário de edição de tarefa
     public function edit(Request $request, Task $task): View
     {
-        $task->load(['notes.user', 'reporter', 'assignee']);
-        $projects = Project::orderBy('name')->get();
+        $task->load(['notes.user', 'reporter', 'assignee', 'project']);
+        $projects = $this->projectsForUser($request, $task);
         $users = User::orderBy('name')->get();
         $taskNotes = $task->status !== 'open'
             ? $this->taskNoteController->prepareRepeaterNotes($request, $task)
@@ -107,6 +106,39 @@ class TaskController extends Controller
     //Atualiza uma tarefa existente
     public function update(Request $request, Task $task): RedirectResponse
     {
+        $assignToMe = $request->has('assign_to_me')
+            && $task->status === 'open'
+            && $request->user()->canAssignTasks();
+        $markResolved = $request->has('mark_resolved')
+            && $task->status === 'in_progress'
+            && $request->user()->canAssignTasks();
+        $markClosed = $request->has('mark_closed') && $task->status === 'resolved';
+
+        if ($task->status !== 'open') {
+            if ($markResolved) {
+                $task->update([
+                    'status' => 'resolved',
+                    'resolved_at' => now(),
+                ]);
+
+                return redirect()
+                    ->route('tasks.index')
+                    ->with('success', 'Tarefa marcada como resolvida.');
+            }
+
+            if ($markClosed) {
+                $task->update([
+                    'status' => 'closed',
+                ]);
+
+                return redirect()
+                    ->route('tasks.index')
+                    ->with('success', 'Tarefa fechada com sucesso.');
+            }
+
+            return back()->with('success', 'Nenhuma alteração foi realizada na tarefa.');
+        }
+
         if ((int) $request->project_id !== (int) $task->project_id
             && Task::where('project_id', $request->project_id)->where('code', $task->code)->exists()) {
             return back()
@@ -114,19 +146,13 @@ class TaskController extends Controller
                 ->withInput();
         }
 
-        $rules = [
-            'project_id' => ['required', 'exists:projects,id'],
+        $validated = $request->validate([
+            'project_id' => ['required', 'exists:projects,id', Rule::in($this->userProjectIds($request, $task))],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'severity' => ['required', Rule::in(['low', 'medium', 'high', 'critical'])],
             'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,gif,webp,doc,docx,xls,xlsx,zip'],
-        ];
-
-        if ($task->status !== 'open') {
-            $rules = array_merge($rules, TaskNoteController::validationRules());
-        }
-
-        $validated = $request->validate($rules);
+        ]);
 
         $attachmentPath = $task->attachment;
 
@@ -134,10 +160,6 @@ class TaskController extends Controller
             $this->deleteFile($task->attachment);
             $attachmentPath = $this->storeTaskAttachment($request->file('attachment'));
         }
-
-        $assignToMe = $request->has('assign_to_me') && $task->status === 'open';
-        $markResolved = $request->has('mark_resolved') && $task->status === 'in_progress';
-        $markClosed = $request->has('mark_closed') && $task->status === 'resolved';
 
         $task->update([
             'project_id' => $validated['project_id'],
@@ -149,25 +171,11 @@ class TaskController extends Controller
                 'assignee_id' => $request->user()->id,
                 'status' => 'in_progress',
             ] : []),
-            ...($markResolved ? [
-                'status' => 'resolved',
-                'resolved_at' => now(),
-            ] : []),
-            ...($markClosed ? [
-                'status' => 'closed',
-            ] : []),
         ]);
 
-        if ($task->status !== 'open') {
-            $this->taskNoteController->sync($task, $request);
-        }
-
-        $successMessage = match (true) {
-            $markClosed => 'Tarefa fechada com sucesso.',
-            $markResolved => 'Tarefa marcada como resolvida.',
-            $assignToMe => 'Tarefa atribuída a você e colocada em andamento.',
-            default => 'Tarefa atualizada com sucesso.',
-        };
+        $successMessage = $assignToMe
+            ? 'Tarefa atribuída a você e colocada em andamento.'
+            : 'Tarefa atualizada com sucesso.';
 
         return redirect()
             ->route('tasks.index')
@@ -175,8 +183,14 @@ class TaskController extends Controller
     }
 
     //Deleta uma tarefa
-    public function destroy(Task $task): RedirectResponse
+    public function destroy(Request $request, Task $task): RedirectResponse
     {
+        $request->user()->loadMissing('group');
+
+        if (! $request->user()->canDeleteTask($task)) {
+            abort(403);
+        }
+
         $task->load('notes');
 
         $this->deleteFile($task->attachment);
@@ -189,6 +203,32 @@ class TaskController extends Controller
     }
 
     //Gera o próximo código sequencial da tarefa no projeto
+    private function projectsForUser(Request $request, ?Task $task = null): Collection
+    {
+        $projects = $request->user()->projects()->orderBy('projects.name')->get();
+
+        if ($task?->project_id && ! $projects->contains('id', $task->project_id)) {
+            $task->loadMissing('project');
+
+            if ($task->project) {
+                $projects = $projects->push($task->project)->sortBy('name')->values();
+            }
+        }
+
+        return $projects;
+    }
+
+    private function userProjectIds(Request $request, ?Task $task = null): array
+    {
+        $ids = $request->user()->projects()->pluck('projects.id')->all();
+
+        if ($task?->project_id && ! in_array($task->project_id, $ids, true)) {
+            $ids[] = $task->project_id;
+        }
+
+        return $ids;
+    }
+
     private function generateNextCode(int $projectId): string
     {
         return (string) DB::transaction(function () use ($projectId) {

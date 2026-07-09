@@ -17,8 +17,8 @@ class TaskNoteController extends Controller
         return [
             'notes' => ['nullable', 'array'],
             'notes.*.id' => ['nullable', 'integer', 'exists:task_notes,id'],
-            'notes.*.user_id' => ['required_with:notes.*.note', 'nullable', 'exists:users,id'],
-            'notes.*.note' => ['required_with:notes.*.user_id', 'nullable', 'string'],
+            'notes.*.user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'notes.*.note' => ['nullable', 'string'],
             'notes.*.attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,gif,webp,doc,docx,xls,xlsx,zip'],
         ];
     }
@@ -54,7 +54,6 @@ class TaskNoteController extends Controller
         $this->ensureTaskAcceptsNotes($task);
 
         $validated = $request->validate([
-            'user_id' => ['required', 'exists:users,id'],
             'note' => ['required', 'string'],
             'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,gif,webp,doc,docx,xls,xlsx,zip'],
         ]);
@@ -64,16 +63,16 @@ class TaskNoteController extends Controller
             : null;
 
         $task->notes()->create([
-            'user_id' => $validated['user_id'],
+            'user_id' => $request->user()->id,
             'note' => $validated['note'],
             'attachment' => $attachmentPath,
         ]);
 
-        return back()->with('success', 'Anotação adicionada com sucesso.');
+        return back()->with('notes_success', 'Anotação adicionada com sucesso.');
     }
 
     //Deleta uma anotação da tarefa
-    public function destroyNote(Task $task, TaskNote $note): RedirectResponse
+    public function destroyNote(Request $request, Task $task, TaskNote $note): RedirectResponse
     {
         $this->ensureTaskAcceptsNotes($task);
 
@@ -81,10 +80,25 @@ class TaskNoteController extends Controller
             abort(404);
         }
 
+        $this->ensureUserOwnsNote($request, $note);
+
         $this->deleteFile($note->attachment);
         $note->delete();
 
-        return back()->with('success', 'Anotação excluída com sucesso.');
+        return back()->with('notes_success', 'Anotação excluída com sucesso.');
+    }
+
+    //Salva as anotações da tarefa
+    public function update(Request $request, Task $task): RedirectResponse
+    {
+        $this->ensureTaskAcceptsNotes($task);
+
+        $request->validateWithBag('notes', self::validationRules());
+
+        $this->sync($task, $request);
+
+        return back()
+            ->with('notes_success', 'Anotações salvas com sucesso.');
     }
 
     //Sincroniza as anotações da tarefa
@@ -97,39 +111,56 @@ class TaskNoteController extends Controller
 
         foreach ($notes as $index => $noteData) {
             $noteText = trim($noteData['note'] ?? '');
-            $userId = $noteData['user_id'] ?? null;
-
-            if ($noteText === '' && empty($userId)) {
-                continue;
-            }
-
-            $attachmentPath = $noteData['existing_attachment'] ?? null;
-            $file = $request->file("notes.{$index}.attachment");
-
-            if ($file) {
-                $this->deleteFile($attachmentPath);
-                $attachmentPath = $this->storeNoteAttachment($file);
-            }
-
             $noteId = $noteData['id'] ?? null;
 
             if ($noteId) {
                 $taskNote = TaskNote::where('task_id', $task->id)->find($noteId);
 
                 if ($taskNote) {
+                    $submittedIds[] = $taskNote->id;
+
+                    if ((int) $taskNote->user_id !== (int) $request->user()->id) {
+                        continue;
+                    }
+
+                    if ($noteText === '') {
+                        $this->deleteFile($taskNote->attachment);
+                        $taskNote->delete();
+                        $submittedIds = array_values(array_diff($submittedIds, [$taskNote->id]));
+
+                        continue;
+                    }
+
+                    $attachmentPath = $noteData['existing_attachment'] ?? null;
+                    $file = $request->file("notes.{$index}.attachment");
+
+                    if ($file) {
+                        $this->deleteFile($attachmentPath);
+                        $attachmentPath = $this->storeNoteAttachment($file);
+                    }
+
                     $taskNote->update([
-                        'user_id' => $userId,
                         'note' => $noteText,
                         'attachment' => $attachmentPath,
                     ]);
-                    $submittedIds[] = $taskNote->id;
                 }
 
                 continue;
             }
 
+            if ($noteText === '') {
+                continue;
+            }
+
+            $attachmentPath = null;
+            $file = $request->file("notes.{$index}.attachment");
+
+            if ($file) {
+                $attachmentPath = $this->storeNoteAttachment($file);
+            }
+
             $taskNote = $task->notes()->create([
-                'user_id' => $userId,
+                'user_id' => $request->user()->id,
                 'note' => $noteText,
                 'attachment' => $attachmentPath,
             ]);
@@ -140,7 +171,11 @@ class TaskNoteController extends Controller
         $task->notes()
             ->whereNotIn('id', $submittedIds)
             ->get()
-            ->each(function (TaskNote $note) {
+            ->each(function (TaskNote $note) use ($request) {
+                if ((int) $note->user_id !== (int) $request->user()->id) {
+                    return;
+                }
+
                 $this->deleteFile($note->attachment);
                 $note->delete();
             });
@@ -160,10 +195,17 @@ class TaskNoteController extends Controller
         return $file->store('task-notes/attachments', 'public');
     }
 
-    //Impede anotações em tarefas com status aberto
+    //Impede anotações em tarefas abertas ou fechadas
     private function ensureTaskAcceptsNotes(Task $task): void
     {
-        if ($task->status === 'open') {
+        if (in_array($task->status, ['open', 'closed'], true)) {
+            abort(403);
+        }
+    }
+
+    private function ensureUserOwnsNote(Request $request, TaskNote $note): void
+    {
+        if ((int) $note->user_id !== (int) $request->user()->id) {
             abort(403);
         }
     }

@@ -1,77 +1,96 @@
 @php
     $taskNotes = $taskNotes ?? [];
+    $errorBag = $errorBag ?? 'default';
+    $notesErrors = $errors->getBag($errorBag);
+    $currentUser = auth()->user();
+    $notesLocked = $notesLocked ?? false;
 @endphp
 
 <div class="form-repeater form-repeater--notes form-page-field--full" id="task-notes-repeater">
     <div class="form-repeater-header">
         <div>
             <label class="form-repeater-title">Anotações</label>
-            <span class="form-page-hint">Registre o histórico de anotações do chamado.</span>
+            <span class="form-page-hint">
+                @if ($notesLocked)
+                    Histórico de anotações do chamado (somente leitura).
+                @else
+                    Registre o histórico de anotações do chamado.
+                @endif
+            </span>
         </div>
-        <button type="button" class="form-repeater-add" id="task-notes-repeater-add">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Adicionar anotação
-        </button>
+        @unless ($notesLocked)
+            <button type="button" class="form-repeater-add" id="task-notes-repeater-add">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Adicionar anotação
+            </button>
+        @endunless
     </div>
 
-    @error('notes')
-        <span class="form-page-error">{{ $message }}</span>
-    @enderror
+    @if ($notesErrors->has('notes'))
+        <span class="form-page-error">{{ $notesErrors->first('notes') }}</span>
+    @endif
 
     <div class="form-repeater-list form-repeater-list--notes" id="task-notes-repeater-list">
         @foreach ($taskNotes as $index => $taskNote)
+            @php
+                $isPersistedNote = ! empty($taskNote['id']);
+                $noteUserId = $isPersistedNote
+                    ? ($taskNote['user_id'] ?? null)
+                    : $currentUser->id;
+                $noteUserName = $isPersistedNote
+                    ? ($users->firstWhere('id', $noteUserId)?->name ?? '—')
+                    : $currentUser->name;
+                $canEditNote = ! $notesLocked && (
+                    ! $isPersistedNote || (int) $noteUserId === (int) $currentUser->id
+                );
+            @endphp
             <div class="form-repeater-item form-repeater-item--note">
-                @if (! empty($taskNote['id']))
+                @if ($isPersistedNote && ! $notesLocked)
                     <input type="hidden" name="notes[{{ $index }}][id]" value="{{ $taskNote['id'] }}">
                 @endif
-                @if (! empty($taskNote['attachment']))
+                @if (! empty($taskNote['attachment']) && $canEditNote)
                     <input type="hidden" name="notes[{{ $index }}][existing_attachment]" value="{{ $taskNote['attachment'] }}">
                 @endif
 
                 <div class="form-repeater-note-grid">
                     <div class="form-page-field">
                         <label>Usuário</label>
-                        <select
-                            name="notes[{{ $index }}][user_id]"
-                            class="form-repeater-select @error('notes.' . $index . '.user_id') is-invalid @enderror"
+                        @if ($isPersistedNote && ! $notesLocked)
+                            <input type="hidden" name="notes[{{ $index }}][user_id]" value="{{ $noteUserId }}">
+                        @endif
+                        <input
+                            type="text"
+                            value="{{ $noteUserName }}"
+                            class="form-page-input--readonly"
+                            readonly
                         >
-                            <option value="">Selecione o usuário</option>
-                            @foreach ($users as $user)
-                                <option
-                                    value="{{ $user->id }}"
-                                    @selected((string) ($taskNote['user_id'] ?? '') === (string) $user->id)
-                                >
-                                    {{ $user->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('notes.' . $index . '.user_id')
-                            <span class="form-page-error">{{ $message }}</span>
-                        @enderror
                     </div>
 
                     <div class="form-page-field form-page-field--full">
                         <label>Anotação</label>
                         <textarea
-                            name="notes[{{ $index }}][note]"
+                            @if ($canEditNote) name="notes[{{ $index }}][note]" @endif
                             rows="3"
-                            class="@error('notes.' . $index . '.note') is-invalid @enderror"
+                            class="{{ ! $canEditNote ? 'form-page-input--readonly' : '' }} {{ $notesErrors->has('notes.' . $index . '.note') ? 'is-invalid' : '' }}"
                             placeholder="Digite a anotação..."
+                            @readonly(! $canEditNote)
                         >{{ $taskNote['note'] ?? '' }}</textarea>
-                        @error('notes.' . $index . '.note')
-                            <span class="form-page-error">{{ $message }}</span>
-                        @enderror
+                        @if ($notesErrors->has('notes.' . $index . '.note'))
+                            <span class="form-page-error">{{ $notesErrors->first('notes.' . $index . '.note') }}</span>
+                        @endif
                     </div>
 
                     <div class="form-page-field form-page-field--full">
                         <label>Anexo da anotação</label>
-                        <input
-                            type="file"
-                            name="notes[{{ $index }}][attachment]"
-                            class="form-page-file @error('notes.' . $index . '.attachment') is-invalid @enderror"
-                        >
+                        @if ($canEditNote)
+                            <input
+                                type="file"
+                                name="notes[{{ $index }}][attachment]"
+                                class="form-page-file {{ $notesErrors->has('notes.' . $index . '.attachment') ? 'is-invalid' : '' }}"
+                            >
+                        @endif
                         @if (! empty($taskNote['attachment']))
                             <div class="form-page-current-file">
                                 <span>Anexo atual:</span>
@@ -79,50 +98,60 @@
                                     {{ basename($taskNote['attachment']) }}
                                 </a>
                             </div>
+                        @elseif (! $canEditNote && $isPersistedNote)
+                            <input
+                                type="text"
+                                value="Nenhum anexo"
+                                class="form-page-input--readonly"
+                                readonly
+                            >
                         @endif
-                        @error('notes.' . $index . '.attachment')
-                            <span class="form-page-error">{{ $message }}</span>
-                        @enderror
+                        @if ($notesErrors->has('notes.' . $index . '.attachment'))
+                            <span class="form-page-error">{{ $notesErrors->first('notes.' . $index . '.attachment') }}</span>
+                        @endif
                     </div>
                 </div>
 
-                @if (! empty($taskNote['id']) && isset($task))
-                    <button
-                        type="button"
-                        class="form-repeater-remove form-repeater-remove--note form-repeater-remove--persisted"
-                        data-destroy-url="{{ route('tasks.destroyNote', [$task, $taskNote['id']]) }}"
-                        title="Excluir anotação"
-                        aria-label="Excluir anotação"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                        </svg>
-                        Excluir
-                    </button>
-                @else
-                    <button type="button" class="form-repeater-remove form-repeater-remove--note" title="Remover anotação" aria-label="Remover anotação">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                        </svg>
-                        Remover
-                    </button>
+                @if ($canEditNote)
+                    @if (! empty($taskNote['id']) && isset($task))
+                        <button
+                            type="button"
+                            class="form-repeater-remove form-repeater-remove--note form-repeater-remove--persisted"
+                            data-destroy-url="{{ route('tasks.destroyNote', [$task, $taskNote['id']]) }}"
+                            title="Excluir anotação"
+                            aria-label="Excluir anotação"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                            Excluir
+                        </button>
+                    @else
+                        <button type="button" class="form-repeater-remove form-repeater-remove--note" title="Remover anotação" aria-label="Remover anotação">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                            Remover
+                        </button>
+                    @endif
                 @endif
             </div>
         @endforeach
     </div>
 </div>
 
+@unless ($notesLocked)
 <template id="task-notes-repeater-template">
     <div class="form-repeater-item form-repeater-item--note">
         <div class="form-repeater-note-grid">
             <div class="form-page-field">
                 <label>Usuário</label>
-                <select name="notes[__INDEX__][user_id]" class="form-repeater-select">
-                    <option value="">Selecione o usuário</option>
-                    @foreach ($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }}</option>
-                    @endforeach
-                </select>
+                <input
+                    type="text"
+                    value="{{ $currentUser->name }}"
+                    class="form-page-input--readonly"
+                    readonly
+                >
             </div>
 
             <div class="form-page-field form-page-field--full">
@@ -218,3 +247,4 @@
         });
     })();
 </script>
+@endunless

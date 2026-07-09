@@ -70,6 +70,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks/{task}/notes', 
         [TaskNoteController::class, 'storeNote']
     )->name('tasks.storeNote');
+
+    Route::put('/tasks/{task}/notes', 
+        [TaskNoteController::class, 'update']
+    )->name('tasks.notes.update');
     
     Route::delete('/tasks/{task}/notes/{note}', 
         [TaskNoteController::class, 'destroyNote']

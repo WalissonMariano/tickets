@@ -60,10 +60,10 @@
             <div class="app-sidebar-footer">
                 <div class="app-user-menu">
                     <button type="button" class="app-user-info" id="user-toggle" aria-expanded="false">
-                        <div class="app-user-avatar">U</div>
+                        <div class="app-user-avatar">{{ strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</div>
                         <div class="app-user-details">
-                            <strong>Usuário</strong>
-                            <span>usuario@email.com</span>
+                            <strong>{{ auth()->user()->name }}</strong>
+                            <span>{{ auth()->user()->email }}</span>
                         </div>
                     </button>
 

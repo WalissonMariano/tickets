@@ -141,7 +141,16 @@ _________________________________________
 
 Status da tarefa 
 
-Aberta
+Aberta - inicia
+
+botao de atribuir so aparece para administrador ou suporte
+
 Em andamento
+
+trava todos os campos
+
 Resolvida
+
+
+
 Fechada
