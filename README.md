@@ -92,7 +92,6 @@ Sistema de gerenciamento de chamados desenvolvido em Laravel. Permite controlar 
 
 ### Pendente
 - Envio de e-mail
-- Histórico de auditoria para grupos
 
 ## Tecnologias
 
