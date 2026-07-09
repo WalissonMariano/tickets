@@ -1,5 +1,8 @@
 # Chamados.TI
 
+<!-- Banner principal: docs/screenshots/banner.png -->
+![Chamados.TI](docs/screenshots/banner.png)
+
 Sistema de gerenciamento de chamados desenvolvido em Laravel. Permite controlar solicitações por projeto, atribuir tarefas a usuários, registrar anotações com anexos, acompanhar métricas operacionais e consultar o histórico de ações do sistema.
 
 ## Funcionalidades
