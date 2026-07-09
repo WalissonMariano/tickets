@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskNoteController;
@@ -28,14 +30,10 @@ Route::middleware('auth')->group(function () {
     })->name('menu');
 
     //rota para a home
-    Route::get('/home', function () {
-        return view('home.home');
-    })->name('home');
+    Route::get('/home', [HomeController::class, 'index'])->name('home');
 
     //rota para o dashboard
-    Route::get('/dashboard', function () {
-        return view('dashboard.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     //rota para as tarefas
     Route::get('/tasks', 

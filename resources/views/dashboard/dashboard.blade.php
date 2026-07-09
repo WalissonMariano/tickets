@@ -1,3 +1,32 @@
+@php
+    $severityLabels = [
+        'low' => 'Baixa',
+        'medium' => 'Média',
+        'high' => 'Alta',
+        'critical' => 'Crítica',
+    ];
+
+    $severityBadgeClasses = [
+        'low' => 'dashboard-badge--low',
+        'medium' => 'dashboard-badge--medium',
+        'high' => 'dashboard-badge--high',
+        'critical' => 'dashboard-badge--critical',
+    ];
+
+    $statusBarLabels = [
+        'open' => 'Abertas',
+        'in_progress' => 'Em andamento',
+        'resolved' => 'Resolvidas',
+        'closed' => 'Fechadas',
+    ];
+
+    $statusBarClasses = [
+        'open' => '',
+        'in_progress' => 'dashboard-bar-fill--progress',
+        'resolved' => 'dashboard-bar-fill--resolved',
+        'closed' => 'dashboard-bar-fill--closed',
+    ];
+@endphp
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -21,7 +50,7 @@
                     </svg>
                 </div>
                 <div class="dashboard-stat-info">
-                    <strong>62%</strong>
+                    <strong>{{ $stats['resolution_rate'] }}%</strong>
                     <span>Taxa de resolução</span>
                 </div>
             </div>
@@ -33,7 +62,7 @@
                     </svg>
                 </div>
                 <div class="dashboard-stat-info">
-                    <strong>2,4d</strong>
+                    <strong>{{ $stats['average_resolution'] }}</strong>
                     <span>Tempo médio</span>
                 </div>
             </div>
@@ -45,7 +74,7 @@
                     </svg>
                 </div>
                 <div class="dashboard-stat-info">
-                    <strong>8</strong>
+                    <strong>{{ $stats['active_users'] }}</strong>
                     <span>Usuários ativos</span>
                 </div>
             </div>
@@ -57,7 +86,7 @@
                     </svg>
                 </div>
                 <div class="dashboard-stat-info">
-                    <strong>4</strong>
+                    <strong>{{ $stats['active_projects'] }}</strong>
                     <span>Projetos ativos</span>
                 </div>
             </div>
@@ -67,90 +96,48 @@
             <div class="dashboard-card">
                 <h2>Tarefas por status</h2>
                 <div class="dashboard-bars">
-                    <div class="dashboard-bar-item">
-                        <span class="dashboard-bar-label">Abertas</span>
-                        <div class="dashboard-bar-track">
-                            <div class="dashboard-bar-fill" style="width: 65%"></div>
+                    @foreach ($statusBarLabels as $status => $label)
+                        <div class="dashboard-bar-item">
+                            <span class="dashboard-bar-label">{{ $label }}</span>
+                            <div class="dashboard-bar-track">
+                                <div
+                                    class="dashboard-bar-fill {{ $statusBarClasses[$status] }}"
+                                    style="width: {{ $statusBars[$status] }}%"
+                                ></div>
+                            </div>
+                            <span class="dashboard-bar-value">{{ $statusCounts[$status] }}</span>
                         </div>
-                        <span class="dashboard-bar-value">12</span>
-                    </div>
-                    <div class="dashboard-bar-item">
-                        <span class="dashboard-bar-label">Em andamento</span>
-                        <div class="dashboard-bar-track">
-                            <div class="dashboard-bar-fill dashboard-bar-fill--progress" style="width: 30%"></div>
-                        </div>
-                        <span class="dashboard-bar-value">5</span>
-                    </div>
-                    <div class="dashboard-bar-item">
-                        <span class="dashboard-bar-label">Resolvidas</span>
-                        <div class="dashboard-bar-track">
-                            <div class="dashboard-bar-fill dashboard-bar-fill--resolved" style="width: 85%"></div>
-                        </div>
-                        <span class="dashboard-bar-value">28</span>
-                    </div>
-                    <div class="dashboard-bar-item">
-                        <span class="dashboard-bar-label">Fechadas</span>
-                        <div class="dashboard-bar-track">
-                            <div class="dashboard-bar-fill dashboard-bar-fill--closed" style="width: 20%"></div>
-                        </div>
-                        <span class="dashboard-bar-value">8</span>
-                    </div>
+                    @endforeach
                 </div>
             </div>
 
             <div class="dashboard-card">
                 <h2>Tarefas por gravidade</h2>
                 <div class="dashboard-severity-list">
-                    <div class="dashboard-severity-item">
-                        <span>Baixa</span>
-                        <span class="dashboard-badge dashboard-badge--low">18 tarefas</span>
-                    </div>
-                    <div class="dashboard-severity-item">
-                        <span>Média</span>
-                        <span class="dashboard-badge dashboard-badge--medium">15 tarefas</span>
-                    </div>
-                    <div class="dashboard-severity-item">
-                        <span>Alta</span>
-                        <span class="dashboard-badge dashboard-badge--high">8 tarefas</span>
-                    </div>
-                    <div class="dashboard-severity-item">
-                        <span>Crítica</span>
-                        <span class="dashboard-badge dashboard-badge--critical">4 tarefas</span>
-                    </div>
+                    @foreach ($severityLabels as $severity => $label)
+                        <div class="dashboard-severity-item">
+                            <span>{{ $label }}</span>
+                            <span class="dashboard-badge {{ $severityBadgeClasses[$severity] }}">
+                                {{ $severityCounts[$severity] }} {{ $severityCounts[$severity] === 1 ? 'tarefa' : 'tarefas' }}
+                            </span>
+                        </div>
+                    @endforeach
                 </div>
             </div>
 
             <div class="dashboard-card dashboard-card--wide">
                 <h2>Atividade da semana</h2>
                 <div class="dashboard-activity">
-                    <div class="dashboard-activity-day">
-                        <div class="dashboard-activity-bar" style="height: 45%"></div>
-                        <span>Seg</span>
-                    </div>
-                    <div class="dashboard-activity-day">
-                        <div class="dashboard-activity-bar" style="height: 70%"></div>
-                        <span>Ter</span>
-                    </div>
-                    <div class="dashboard-activity-day">
-                        <div class="dashboard-activity-bar" style="height: 55%"></div>
-                        <span>Qua</span>
-                    </div>
-                    <div class="dashboard-activity-day">
-                        <div class="dashboard-activity-bar" style="height: 90%"></div>
-                        <span>Qui</span>
-                    </div>
-                    <div class="dashboard-activity-day">
-                        <div class="dashboard-activity-bar" style="height: 60%"></div>
-                        <span>Sex</span>
-                    </div>
-                    <div class="dashboard-activity-day">
-                        <div class="dashboard-activity-bar" style="height: 25%"></div>
-                        <span>Sáb</span>
-                    </div>
-                    <div class="dashboard-activity-day">
-                        <div class="dashboard-activity-bar" style="height: 15%"></div>
-                        <span>Dom</span>
-                    </div>
+                    @foreach ($weeklyActivity as $day)
+                        <div class="dashboard-activity-day">
+                            <div
+                                class="dashboard-activity-bar"
+                                style="height: {{ max($day['height'], 5) }}%"
+                                title="{{ $day['count'] }} {{ $day['count'] === 1 ? 'tarefa' : 'tarefas' }}"
+                            ></div>
+                            <span>{{ $day['label'] }}</span>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </section>

@@ -225,6 +225,17 @@ body.home-page {
     margin-bottom: 0.15rem;
 }
 
+.home-recent-item-info strong a {
+    color: #16a34a;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.home-recent-item-info strong a:hover {
+    color: #15803d;
+    text-decoration: underline;
+}
+
 .home-recent-item-info span {
     font-size: 0.75rem;
     color: #94a3b8;
