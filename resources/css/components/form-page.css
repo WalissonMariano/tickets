@@ -221,6 +221,74 @@ body.form-page {
     margin-top: 1.25rem;
 }
 
+.form-page-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 0.35rem;
+}
+
+.form-page-history-empty {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.form-page-history-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin-top: 1rem;
+}
+
+.form-page-history-item {
+    padding: 0.75rem 0.9rem;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+.form-page-history-item-info strong {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 0.15rem;
+}
+
+.form-page-history-item-info span {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.form-page-history-compact {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.form-page-history-compact-title {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.4rem;
+}
+
+.form-page-history-compact-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.form-page-history-compact-list li {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
 .form-page-actions--section {
     justify-content: flex-end;
     margin-top: 1.25rem;

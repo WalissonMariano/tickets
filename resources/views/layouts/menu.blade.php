@@ -39,22 +39,25 @@
                     Tarefas
                 </a>
 
-                <div class="app-nav-group" id="register-nav-group">
-                    <button type="button" class="app-nav-link app-nav-toggle" id="register-toggle" aria-expanded="false">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 6.75h15M4.5 12h15m-15 5.25h15" />
-                        </svg>
-                        Cadastros
-                        <svg class="app-nav-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                        </svg>
-                    </button>
-                    <div class="app-nav-submenu" id="register-submenu">
-                        <a href="{{ route('register.groups.index') }}" class="app-nav-sublink" data-frame-link target="content-frame">Grupos</a>
-                        <a href="{{ route('register.users.index') }}" class="app-nav-sublink" data-frame-link target="content-frame">Usuários</a>
-                        <a href="{{ route('register.projects.index') }}" class="app-nav-sublink" data-frame-link target="content-frame">Projetos</a>
+                @if (auth()->user()->loadMissing('group')->isAdmin())
+                    <div class="app-nav-group" id="register-nav-group">
+                        <button type="button" class="app-nav-link app-nav-toggle" id="register-toggle" aria-expanded="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 6.75h15M4.5 12h15m-15 5.25h15" />
+                            </svg>
+                            Cadastros
+                            <svg class="app-nav-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                            </svg>
+                        </button>
+                        <div class="app-nav-submenu" id="register-submenu">
+                            <a href="{{ route('register.groups.index') }}" class="app-nav-sublink" data-frame-link target="content-frame">Grupos</a>
+                            <a href="{{ route('register.users.index') }}" class="app-nav-sublink" data-frame-link target="content-frame">Usuários</a>
+                            <a href="{{ route('register.projects.index') }}" class="app-nav-sublink" data-frame-link target="content-frame">Projetos</a>
+                            <a href="{{ route('register.histories.index') }}" class="app-nav-sublink" data-frame-link target="content-frame">Histórico</a>
+                        </div>
                     </div>
-                </div>
+                @endif
             </nav>
 
             <div class="app-sidebar-footer">
@@ -128,23 +131,33 @@
         function clearNavActive() {
             navLinks.forEach(l => l.classList.remove('is-active'));
             subLinks.forEach(l => l.classList.remove('is-active'));
-            registerNavGroup.classList.remove('is-active');
+            registerNavGroup?.classList.remove('is-active');
         }
 
         function openRegisterSubmenu() {
+            if (!registerNavGroup || !registerToggle) {
+                return;
+            }
+
             registerNavGroup.classList.add('is-open');
             registerToggle.setAttribute('aria-expanded', 'true');
         }
 
         function closeRegisterSubmenu() {
+            if (!registerNavGroup || !registerToggle) {
+                return;
+            }
+
             registerNavGroup.classList.remove('is-open');
             registerToggle.setAttribute('aria-expanded', 'false');
         }
 
-        registerToggle.addEventListener('click', () => {
-            const isOpen = registerNavGroup.classList.toggle('is-open');
-            registerToggle.setAttribute('aria-expanded', String(isOpen));
-        });
+        if (registerToggle && registerNavGroup) {
+            registerToggle.addEventListener('click', () => {
+                const isOpen = registerNavGroup.classList.toggle('is-open');
+                registerToggle.setAttribute('aria-expanded', String(isOpen));
+            });
+        }
 
         function closeSidebar() {
             sidebar.classList.remove('is-open');
@@ -172,7 +185,7 @@
             link.addEventListener('click', () => {
                 clearNavActive();
                 link.classList.add('is-active');
-                registerNavGroup.classList.add('is-active');
+                registerNavGroup?.classList.add('is-active');
                 openRegisterSubmenu();
                 topbarTitle.textContent = link.textContent.trim();
                 closeSidebar();

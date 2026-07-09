@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
@@ -153,6 +154,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('/projects/{project}', 
             [ProjectController::class, 'destroy']
         )->name('projects.destroy');
+
+        Route::get('/histories', 
+            [HistoryController::class, 'index']
+        )->name('histories.index');
         
     });
     

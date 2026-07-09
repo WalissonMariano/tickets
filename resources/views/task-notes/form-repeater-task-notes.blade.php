@@ -4,6 +4,7 @@
     $notesErrors = $errors->getBag($errorBag);
     $currentUser = auth()->user();
     $notesLocked = $notesLocked ?? false;
+    $noteHistories = $noteHistories ?? collect();
 @endphp
 
 <div class="form-repeater form-repeater--notes form-page-field--full" id="task-notes-repeater">
@@ -111,6 +112,12 @@
                         @endif
                     </div>
                 </div>
+
+                @if ($isPersistedNote)
+                    @include('histories.partials.audit-list-compact', [
+                        'histories' => $noteHistories->get($taskNote['id'], collect()),
+                    ])
+                @endif
 
                 @if ($canEditNote)
                     @if (! empty($taskNote['id']) && isset($task))

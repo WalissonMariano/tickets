@@ -1,22 +1,65 @@
 # Chamados.TI
 
-Sistema de gerenciamento de chamados desenvolvido em Laravel. Permite controlar solicitações por projeto, atribuir tarefas a usuários, registrar anotações com anexos e manter histórico de alterações.
+Sistema de gerenciamento de chamados desenvolvido em Laravel. Permite controlar solicitações por projeto, atribuir tarefas a usuários, registrar anotações com anexos, acompanhar métricas operacionais e consultar o histórico de ações do sistema.
 
 ## Funcionalidades
 
-### Implementado
-- Tela de login com autenticação
+### Autenticação e layout
+- Login com validação de usuário ativo
+- Rotas protegidas por middleware `auth`
 - Layout principal com menu lateral e conteúdo em iframe
-- Página Home com resumo e ações rápidas
-- Dashboard com métricas e indicadores
-- Models, migrations e relacionamentos do banco de dados
-- Estrutura de views para cadastros (grupos, usuários, projetos, tarefas, etc.)
+- Menu lateral exibe nome e e-mail do usuário logado
+- Página de conta do usuário logado
 
-### Planejado
-- CRUD completo de cadastros e tarefas
+### Home e dashboard
+- **Home** com cards de resumo (abertas, em andamento, resolvidas/fechadas e total)
+- Tarefas recentes com link para edição
+- Ações rápidas (nova tarefa, listagem e dashboard)
+- **Dashboard** com taxa de resolução, tempo médio, usuários/projetos ativos
+- Gráficos por status, gravidade e atividade da semana
+- Dados filtrados pelos projetos vinculados ao usuário logado
+
+### Cadastros (`/register`)
+- Visível no menu apenas para usuários do grupo `ADMIN`
+- CRUD de grupos, usuários e projetos
+- Vínculo de usuários a projetos (repeater no formulário de usuário)
+- **Histórico** — listagem centralizada de todas as ações registradas no sistema, com filtros por busca, tipo de registro e ação
+
+### Tarefas
+- CRUD de chamados com código sequencial por projeto
+- Anexo da tarefa (armazenamento em `storage/app/public`)
+- Fluxo de status: `open` → `in_progress` → `resolved` → `closed`
+- Anotações com autor automático (usuário logado), anexos e repeater na edição
+- Projetos disponíveis limitados aos vinculados ao usuário
+
+### Histórico de auditoria
+- Registro automático de ações via `HistoryService`
+- Ações registradas: `created`, `updated`, `deleted`, `assigned`, `resolved`, `closed`
+- Entidades auditadas: usuários, projetos, tarefas e anotações
+- Exibição do histórico nos formulários de edição (usuário, projeto, tarefa e anotação)
+- Listagem geral em **Cadastros → Histórico** (somente admin)
+
+### Regras de negócio
+| Regra | Comportamento |
+|-------|---------------|
+| Menu Cadastros | Visível apenas para grupo `ADMIN` |
+| Atribuir a mim / Resolvido | Apenas grupos `ADMIN` e `SUPORTE` |
+| Tarefa não aberta | Campos bloqueados; só anotações editáveis |
+| Tarefa fechada | Tudo somente leitura, inclusive anotações |
+| Exclusão de tarefa | Usuários só excluem tarefas abertas; administrador exclui em qualquer status |
+| Edição de anotação | Somente o usuário que criou a anotação |
+| Projetos no formulário | Limitados aos vinculados ao usuário logado |
+
+### Grupos padrão
+| Código | Descrição |
+|--------|-----------|
+| `ADMIN` | Administrador |
+| `SUPORTE` | Suporte |
+| `USUARIOS` | Usuários |
+
+### Pendente
 - Envio de e-mail
-- Armazenamento de arquivos anexados
-- Middleware de autenticação nas rotas protegidas
+- Histórico de auditoria para grupos
 
 ## Tecnologias
 
@@ -24,7 +67,7 @@ Sistema de gerenciamento de chamados desenvolvido em Laravel. Permite controlar 
 - Laravel 10
 - Laravel Sanctum
 - Vite
-- MySQL (ou banco configurado no `.env`)
+- PostgreSQL
 
 ## Estrutura do banco
 
@@ -38,21 +81,39 @@ Sistema de gerenciamento de chamados desenvolvido em Laravel. Permite controlar 
 | `task_notes` | Anotações e anexos das tarefas |
 | `histories` | Log de auditoria (ações nos registros) |
 
-## Estrutura de views
+## Estrutura do projeto
 
 ```
+app/
+├── Http/Controllers/
+│   ├── Auth/LoginController.php
+│   ├── DashboardController.php
+│   ├── GroupController.php
+│   ├── HistoryController.php
+│   ├── HomeController.php
+│   ├── ProjectController.php
+│   ├── TaskController.php
+│   ├── TaskNoteController.php
+│   └── UserController.php
+├── Models/
+└── Services/
+    ├── HistoryService.php        # Registro de ações de auditoria
+    └── TaskStatsService.php      # Consultas compartilhadas home/dashboard
+
 resources/views/
-├── auth/           # Login
-├── layouts/        # Menu principal
-├── home/           # Página inicial
-├── dashboard/      # Dashboard
-├── groups/         # Cadastro de grupos
-├── users/          # Cadastro de usuários
-├── projects/       # Cadastro de projetos
-├── project-user/   # Vínculo usuário-projeto
-├── tasks/          # Tarefas
-├── task-notes/     # Anotações
-└── histories/      # Histórico
+├── auth/                         # Login
+├── layouts/                      # Menu principal
+├── home/                         # Página inicial
+├── dashboard/                    # Dashboard
+├── account/                      # Minha conta
+├── register/
+│   ├── groups/                   # Grupos
+│   ├── users/                    # Usuários
+│   ├── projects/                 # Projetos
+│   └── project-user/             # Vínculo usuário-projeto
+├── tasks/                        # Tarefas
+├── task-notes/                   # Anotações
+└── histories/                    # Listagem e partials de histórico
 ```
 
 ## Instalação
@@ -69,23 +130,44 @@ npm install
 cp .env.example .env
 php artisan key:generate
 
-# Configurar banco de dados no .env e rodar migrations
+# Configurar banco PostgreSQL no .env e rodar migrations
 php artisan migrate
+
+# Link simbólico para anexos públicos
+php artisan storage:link
 
 # Compilar assets
 npm run dev
 ```
 
+### Acesso inicial
+
+Após as migrations, é criado um usuário administrador padrão:
+
+| Campo | Valor |
+|-------|-------|
+| E-mail | `admin@admin.com` |
+| Senha | `admin` |
+
+Com [Laravel Herd](https://herd.laravel.com), o projeto pode ser acessado em `http://tickets.test`.
+
 ## Rotas principais
 
 | Rota | Descrição |
 |------|-----------|
-| `/` | Login |
+| `/` | Redireciona para login |
+| `/login` | Tela de autenticação |
 | `/menu` | Layout com menu e iframe |
-| `/home` | Home (conteúdo do iframe) |
-| `/dashboard` | Dashboard (conteúdo do iframe) |
-
-> As rotas ainda não estão protegidas por middleware de autenticação durante o desenvolvimento inicial.
+| `/home` | Home com resumo e tarefas recentes |
+| `/dashboard` | Dashboard com métricas |
+| `/tasks` | Listagem de tarefas |
+| `/tasks/create` | Nova tarefa |
+| `/tasks/{task}/edit` | Edição de tarefa |
+| `/account` | Dados da conta logada |
+| `/register/groups` | Cadastro de grupos |
+| `/register/users` | Cadastro de usuários |
+| `/register/projects` | Cadastro de projetos |
+| `/register/histories` | Histórico geral do sistema (admin) |
 
 ## Desenvolvimento
 
@@ -99,8 +181,6 @@ npm run build
 # Rodar testes
 php artisan test
 ```
-
-Com [Laravel Herd](https://herd.laravel.com), o projeto pode ser acessado diretamente em `http://tickets.test`.
 
 ## Paleta visual
 

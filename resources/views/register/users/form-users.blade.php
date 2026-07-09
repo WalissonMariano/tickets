@@ -148,6 +148,10 @@
                 </div>
             </div>
         </div>
+
+        @if ($isEdit)
+            @include('histories.partials.audit-list', ['histories' => $histories ?? collect()])
+        @endif
     </div>
 </body>
 </html>

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -72,6 +73,11 @@ class User extends Authenticatable
     public function histories(): HasMany
     {
         return $this->hasMany(History::class);
+    }
+
+    public function auditHistories(): MorphMany
+    {
+        return $this->morphMany(History::class, 'auditable')->latest();
     }
 
     public function taskNotes(): HasMany

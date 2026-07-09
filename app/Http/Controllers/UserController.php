@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Group;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\HistoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -12,6 +13,9 @@ use Illuminate\View\View;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private readonly HistoryService $historyService
+    ) {}
 
     //busca todos os usuários
     public function index(Request $request): View
@@ -73,6 +77,8 @@ class UserController extends Controller
 
         $user->projects()->sync($validated['projects'] ?? []);
 
+        $this->historyService->recordCreated($user);
+
         return redirect()
             ->route('register.users.index')
             ->with('success', 'Usuário cadastrado com sucesso.');
@@ -81,11 +87,12 @@ class UserController extends Controller
     //exibe o formulário de edição de usuário
     public function edit(User $user): View
     {
-        $user->load('projects');
+        $user->load(['projects', 'auditHistories.user']);
         $groups = Group::orderBy('description')->get();
         $projects = Project::orderBy('name')->get();
+        $histories = $user->auditHistories;
 
-        return view('register.users.form-users', compact('user', 'groups', 'projects'));
+        return view('register.users.form-users', compact('user', 'groups', 'projects', 'histories'));
     }
 
     //atualiza um usuário existente
@@ -117,6 +124,8 @@ class UserController extends Controller
         $user->save();
         $user->projects()->sync($validated['projects'] ?? []);
 
+        $this->historyService->recordUpdated($user);
+
         return redirect()
             ->route('register.users.index')
             ->with('success', 'Usuário atualizado com sucesso.');
@@ -125,6 +134,7 @@ class UserController extends Controller
     //exclui um usuário existente
     public function destroy(User $user): RedirectResponse
     {
+        $this->historyService->recordDeleted($user);
         $user->delete();
 
         return redirect()

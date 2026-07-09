@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Services\HistoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -10,6 +11,9 @@ use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
+    public function __construct(
+        private readonly HistoryService $historyService
+    ) {}
     //Busca todos os projetos
     public function index(Request $request): View
     {
@@ -39,10 +43,12 @@ class ProjectController extends Controller
             'is_active' => ['nullable', 'boolean'],
         ]);
 
-        Project::create([
+        $project = Project::create([
             'name' => $validated['name'],
             'is_active' => $request->boolean('is_active'),
         ]);
+
+        $this->historyService->recordCreated($project);
 
         return redirect()
             ->route('register.projects.index')
@@ -52,7 +58,12 @@ class ProjectController extends Controller
     //Mostra o formulário de edição de projeto
     public function edit(Project $project): View
     {
-        return view('register.projects.form-projects', compact('project'));
+        $project->load(['auditHistories.user']);
+
+        return view('register.projects.form-projects', [
+            'project' => $project,
+            'histories' => $project->auditHistories,
+        ]);
     }
 
     //Atualiza um projeto
@@ -68,6 +79,8 @@ class ProjectController extends Controller
             'is_active' => $request->boolean('is_active'),
         ]);
 
+        $this->historyService->recordUpdated($project);
+
         return redirect()
             ->route('register.projects.index')
             ->with('success', 'Projeto atualizado com sucesso.');
@@ -76,6 +89,7 @@ class ProjectController extends Controller
     //Deleta um projeto
     public function destroy(Project $project): RedirectResponse
     {
+        $this->historyService->recordDeleted($project);
         $project->delete();
 
         return redirect()

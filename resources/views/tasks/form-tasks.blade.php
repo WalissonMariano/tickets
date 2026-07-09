@@ -392,6 +392,7 @@
                         'task' => $task,
                         'errorBag' => 'notes',
                         'notesLocked' => true,
+                        'noteHistories' => $noteHistories ?? collect(),
                     ])
                 @else
                     <form
@@ -409,6 +410,7 @@
                             'task' => $task,
                             'errorBag' => 'notes',
                             'notesLocked' => false,
+                            'noteHistories' => $noteHistories ?? collect(),
                         ])
 
                         <div class="form-page-actions form-page-actions--section">
@@ -419,6 +421,10 @@
                     </form>
                 @endif
             </div>
+        @endif
+
+        @if ($isEdit)
+            @include('histories.partials.audit-list', ['histories' => $histories ?? collect()])
         @endif
     </div>
 </body>

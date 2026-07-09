@@ -310,6 +310,11 @@ body.index-page {
     color: #64748b;
 }
 
+.index-page-badge--neutral {
+    background: #e0e7ff;
+    color: #4338ca;
+}
+
 .index-page-empty {
     padding: 3rem 1.5rem;
     text-align: center;

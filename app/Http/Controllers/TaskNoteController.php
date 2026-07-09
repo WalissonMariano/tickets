@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use App\Models\TaskNote;
+use App\Services\HistoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -11,6 +12,10 @@ use Illuminate\Support\Facades\Storage;
 
 class TaskNoteController extends Controller
 {
+    public function __construct(
+        private readonly HistoryService $historyService
+    ) {}
+
     //Retorna as regras de validação das anotações
     public static function validationRules(): array
     {
@@ -62,11 +67,13 @@ class TaskNoteController extends Controller
             ? $this->storeNoteAttachment($request->file('attachment'))
             : null;
 
-        $task->notes()->create([
+        $taskNote = $task->notes()->create([
             'user_id' => $request->user()->id,
             'note' => $validated['note'],
             'attachment' => $attachmentPath,
         ]);
+
+        $this->historyService->recordCreated($taskNote);
 
         return back()->with('notes_success', 'Anotação adicionada com sucesso.');
     }
@@ -82,6 +89,7 @@ class TaskNoteController extends Controller
 
         $this->ensureUserOwnsNote($request, $note);
 
+        $this->historyService->recordDeleted($note);
         $this->deleteFile($note->attachment);
         $note->delete();
 
@@ -124,6 +132,7 @@ class TaskNoteController extends Controller
                     }
 
                     if ($noteText === '') {
+                        $this->historyService->recordDeleted($taskNote);
                         $this->deleteFile($taskNote->attachment);
                         $taskNote->delete();
                         $submittedIds = array_values(array_diff($submittedIds, [$taskNote->id]));
@@ -143,6 +152,8 @@ class TaskNoteController extends Controller
                         'note' => $noteText,
                         'attachment' => $attachmentPath,
                     ]);
+
+                    $this->historyService->recordUpdated($taskNote);
                 }
 
                 continue;
@@ -165,6 +176,8 @@ class TaskNoteController extends Controller
                 'attachment' => $attachmentPath,
             ]);
 
+            $this->historyService->recordCreated($taskNote);
+
             $submittedIds[] = $taskNote->id;
         }
 
@@ -176,6 +189,7 @@ class TaskNoteController extends Controller
                     return;
                 }
 
+                $this->historyService->recordDeleted($note);
                 $this->deleteFile($note->attachment);
                 $note->delete();
             });

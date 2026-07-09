@@ -53,6 +53,11 @@ class Task extends Model
 
     public function histories(): MorphMany
     {
-        return $this->morphMany(History::class, 'auditable');
+        return $this->auditHistories();
+    }
+
+    public function auditHistories(): MorphMany
+    {
+        return $this->morphMany(History::class, 'auditable')->latest();
     }
 }

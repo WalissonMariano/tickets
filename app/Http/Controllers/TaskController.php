@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\History;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\HistoryService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -16,7 +18,8 @@ use Illuminate\View\View;
 class TaskController extends Controller
 {
     public function __construct(
-        private readonly TaskNoteController $taskNoteController
+        private readonly TaskNoteController $taskNoteController,
+        private readonly HistoryService $historyService
     ) {}
 
     //Busca todas as tarefas
@@ -83,6 +86,12 @@ class TaskController extends Controller
             'attachment' => $attachmentPath,
         ]);
 
+        $this->historyService->recordCreated($task);
+
+        if ($assignToMe) {
+            $this->historyService->record($task, History::ACTION_ASSIGNED);
+        }
+
         return redirect()
             ->route('tasks.index')
             ->with('success', $assignToMe
@@ -93,14 +102,18 @@ class TaskController extends Controller
     //Mostra o formulário de edição de tarefa
     public function edit(Request $request, Task $task): View
     {
-        $task->load(['notes.user', 'reporter', 'assignee', 'project']);
+        $task->load(['notes.user', 'notes.auditHistories.user', 'reporter', 'assignee', 'project', 'auditHistories.user']);
         $projects = $this->projectsForUser($request, $task);
         $users = User::orderBy('name')->get();
         $taskNotes = $task->status !== 'open'
             ? $this->taskNoteController->prepareRepeaterNotes($request, $task)
             : [];
+        $histories = $task->auditHistories;
+        $noteHistories = $task->notes->mapWithKeys(
+            fn ($note) => [$note->id => $note->auditHistories]
+        );
 
-        return view('tasks.form-tasks', compact('task', 'projects', 'users', 'taskNotes'));
+        return view('tasks.form-tasks', compact('task', 'projects', 'users', 'taskNotes', 'histories', 'noteHistories'));
     }
 
     //Atualiza uma tarefa existente
@@ -121,6 +134,8 @@ class TaskController extends Controller
                     'resolved_at' => now(),
                 ]);
 
+                $this->historyService->record($task, History::ACTION_RESOLVED);
+
                 return redirect()
                     ->route('tasks.index')
                     ->with('success', 'Tarefa marcada como resolvida.');
@@ -130,6 +145,8 @@ class TaskController extends Controller
                 $task->update([
                     'status' => 'closed',
                 ]);
+
+                $this->historyService->record($task, History::ACTION_CLOSED);
 
                 return redirect()
                     ->route('tasks.index')
@@ -173,6 +190,12 @@ class TaskController extends Controller
             ] : []),
         ]);
 
+        if ($assignToMe) {
+            $this->historyService->record($task, History::ACTION_ASSIGNED);
+        } else {
+            $this->historyService->recordUpdated($task);
+        }
+
         $successMessage = $assignToMe
             ? 'Tarefa atribuída a você e colocada em andamento.'
             : 'Tarefa atualizada com sucesso.';
@@ -195,6 +218,7 @@ class TaskController extends Controller
 
         $this->deleteFile($task->attachment);
         $this->taskNoteController->purgeAttachments($task);
+        $this->historyService->recordDeleted($task);
         $task->delete();
 
         return redirect()
