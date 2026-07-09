@@ -113,12 +113,12 @@
                         <input
                             type="text"
                             id="code"
-                            value="{{ $isEdit ? $task->code : '—' }}"
+                            value="{{ $isEdit ? $task->code : ($nextCode ?? '—') }}"
                             class="form-page-input--readonly"
                             readonly
                         >
                         @unless ($isEdit)
-                            <span class="form-page-hint">Número sequencial gerado automaticamente ao salvar.</span>
+                            <span class="form-page-hint">Próximo número sequencial do sistema (atribuído ao salvar).</span>
                         @endunless
                     </div>
 

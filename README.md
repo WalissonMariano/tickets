@@ -5,6 +5,36 @@
 
 Sistema de gerenciamento de chamados desenvolvido em Laravel. Permite controlar solicitações por projeto, atribuir tarefas a usuários, registrar anotações com anexos, acompanhar métricas operacionais e consultar o histórico de ações do sistema.
 
+## Capturas de tela
+
+### Login
+
+![Tela de login](docs/screenshots/login.png)
+
+### Home
+
+![Página inicial](docs/screenshots/home.png) 
+
+### Dashboard
+
+![Dashboard](docs/screenshots/dashboard.png) 
+
+### Tarefas
+
+![Listagem de tarefas](docs/screenshots/tasks-index.png) 
+
+![Formulário de tarefa](docs/screenshots/tasks-form.png) 
+
+### Cadastros
+
+![Cadastro de usuários](docs/screenshots/register-users.png) 
+
+![Cadastro de projetos](docs/screenshots/register-projects.png) 
+
+### Histórico
+
+![Histórico geral](docs/screenshots/histories.png) 
+
 ## Funcionalidades
 
 ### Autenticação e layout
@@ -29,7 +59,7 @@ Sistema de gerenciamento de chamados desenvolvido em Laravel. Permite controlar 
 - **Histórico** — listagem centralizada de todas as ações registradas no sistema, com filtros por busca, tipo de registro e ação
 
 ### Tarefas
-- CRUD de chamados com código sequencial por projeto
+- CRUD de chamados com código sequencial no sistema
 - Anexo da tarefa (armazenamento em `storage/app/public`)
 - Fluxo de status: `open` → `in_progress` → `resolved` → `closed`
 - Anotações com autor automático (usuário logado), anexos e repeater na edição

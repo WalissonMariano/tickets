@@ -54,8 +54,9 @@ class TaskController extends Controller
     {
         $projects = $this->projectsForUser($request);
         $users = User::orderBy('name')->get();
+        $nextCode = $this->peekNextCode();
 
-        return view('tasks.form-tasks', compact('projects', 'users'));
+        return view('tasks.form-tasks', compact('projects', 'users', 'nextCode'));
     }
 
     //Cria uma nova tarefa
@@ -75,22 +76,26 @@ class TaskController extends Controller
 
         $assignToMe = $request->has('assign_to_me') && $request->user()->canAssignTasks();
 
-        $task = Task::create([
-            ...$validated,
-            'code' => $this->generateNextCode($validated['project_id']),
-            'reporter_id' => $request->user()->id,
-            'assignee_id' => $assignToMe ? $request->user()->id : null,
-            'requested_at' => now(),
-            'resolved_at' => null,
-            'status' => $assignToMe ? 'in_progress' : 'open',
-            'attachment' => $attachmentPath,
-        ]);
+        $task = DB::transaction(function () use ($request, $validated, $attachmentPath, $assignToMe) {
+            $task = Task::create([
+                ...$validated,
+                'code' => $this->generateNextCode(),
+                'reporter_id' => $request->user()->id,
+                'assignee_id' => $assignToMe ? $request->user()->id : null,
+                'requested_at' => now(),
+                'resolved_at' => null,
+                'status' => $assignToMe ? 'in_progress' : 'open',
+                'attachment' => $attachmentPath,
+            ]);
 
-        $this->historyService->recordCreated($task);
+            $this->historyService->recordCreated($task);
 
-        if ($assignToMe) {
-            $this->historyService->record($task, History::ACTION_ASSIGNED);
-        }
+            if ($assignToMe) {
+                $this->historyService->record($task, History::ACTION_ASSIGNED);
+            }
+
+            return $task;
+        });
 
         return redirect()
             ->route('tasks.index')
@@ -253,17 +258,25 @@ class TaskController extends Controller
         return $ids;
     }
 
-    private function generateNextCode(int $projectId): string
+    private function generateNextCode(): string
     {
-        return (string) DB::transaction(function () use ($projectId) {
-            $maxCode = Task::where('project_id', $projectId)
-                ->lockForUpdate()
-                ->pluck('code')
-                ->map(fn (string $code) => ctype_digit($code) ? (int) $code : 0)
-                ->max() ?? 0;
+        $maxCode = Task::query()
+            ->lockForUpdate()
+            ->pluck('code')
+            ->map(fn ($code) => ctype_digit((string) $code) ? (int) $code : 0)
+            ->max() ?? 0;
 
-            return (string) ($maxCode + 1);
-        });
+        return (string) ($maxCode + 1);
+    }
+
+    private function peekNextCode(): string
+    {
+        $maxCode = Task::query()
+            ->pluck('code')
+            ->map(fn ($code) => ctype_digit((string) $code) ? (int) $code : 0)
+            ->max() ?? 0;
+
+        return (string) ($maxCode + 1);
     }
 
     //Armazena o arquivo da tarefa

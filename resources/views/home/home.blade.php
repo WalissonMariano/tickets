@@ -60,7 +60,7 @@
                     </svg>
                 </div>
                 <div class="home-stat-info">
-                    <strong>{{ $stats['resolved_closed'] }}</strong>
+                    <strong>{{ ($statusCounts['resolved'] ?? 0) + ($statusCounts['closed'] ?? 0) }}</strong>
                     <span>Resolvidas/Fechadas</span>
                 </div>
             </div>

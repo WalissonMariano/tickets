@@ -209,6 +209,15 @@ body.index-page {
     max-width: 260px;
 }
 
+.index-page-col--title {
+    width: 35%;
+    min-width: 300px;
+}
+
+.index-page-col--title .index-page-title {
+    max-width: none;
+}
+
 .index-page-meta {
     display: block;
     font-size: 0.75rem;
@@ -223,6 +232,15 @@ body.index-page {
 .index-page-actions {
     text-align: right;
     white-space: nowrap;
+}
+
+.index-page-col--actions {
+    width: 2.75rem;
+    text-align: center;
+}
+
+.index-page-col--actions .index-page-action-link {
+    padding: 0.35rem;
 }
 
 .index-page-action-link {

@@ -26,6 +26,6 @@ class HomeController extends Controller
 
         $recentTasks = $this->taskStats->recentTasks($user);
 
-        return view('home.home', compact('stats', 'recentTasks'));
+        return view('home.home', compact('stats', 'recentTasks', 'statusCounts'));
     }
 }
